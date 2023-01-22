@@ -2,31 +2,28 @@ const dotenv = require("dotenv");
 dotenv.config()
 const express = require("express")
 const cors = require("cors");
-const { default: mongoose } = require("mongoose");
+const authRoutes = require("./routes/auth")
+const mongoose  = require("mongoose");
+const client = require("./configs/db");
 
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 
+app.use("/auth",authRoutes);
+
 const PORT = process.env.PORT || 3300 
 
 mongoose.set("strictQuery", false);
-
-mongoose.connect(process.env.DB_URL,(err)=>{
-    if(err){
-        console.log(err);
-    }
-    else{
-        console.log("connected to database");
-    }
+mongoose.connect(process.env.DB_URL)
+.then(()=>{
+    app.listen(PORT,()=>{
+        console.log(`server running on port ${PORT}`);
+    })
+    console.log("Connected to db",);
 })
-
-app.listen(PORT,(err)=>{
-    if(err){
-        console.log(err);
-    }
-    else{
-        console.log(`listening to port ${PORT}`);
-    }
+.catch((err)=>{
+    console.log(err);
+    
 })

@@ -1,6 +1,6 @@
-const mongoose = require('mongoose')
+const { MongoClient } = require("mongodb");
+// Replace the uri string with your connection string.
+const uri =process.env.DB_URL;
+const client = new MongoClient(uri);
 
-export const connectionParams = {
-    useNewUrlParser : true,
-    useUnifiedTopology : true
-}
+module.exports = client;
