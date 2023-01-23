@@ -3,6 +3,29 @@ const {body,validationResult} = require('express-validator')
 const bcrypt = require("bcrypt")
 var jwt = require('jsonwebtoken');
 
+const accessTokenGenerator = (user) => {
+    const payload = {}
+    const options = {
+        expiresIn : "1h",
+        audience: [user._id]
+    }
+    var accessToken = jwt.sign(payload, process.env.JWT_ACCESS_KEY,options);
+
+    return accessToken
+}
+const refreshTokenGenerator = (user) => {
+    const payload = {}
+    const options = {
+        expiresIn : "1y",
+        audience: [user._id]
+    }
+    var refreshToken = jwt.sign(payload, process.env.JWT_ACCESS_KEY,options);
+
+    return refreshToken
+}
+
+
+
 exports.signup = async(req,res) => {
     const {email,name,password} = req.body;
 
@@ -17,36 +40,25 @@ exports.signup = async(req,res) => {
         }
         else{
             bcrypt.hash(password, 10, async (err, hash) => {
-                const user = new User({
-                    email,
-                    name,
-                    password:hash
-                })
-                
-                await user.save();
-
-                
-                    const Apayload = {}
-                    const Aoptions = {
-                        expiresIn : "1h",
-                        audience: [user._id]
-                    }
+                if (err) {
+                    res.json({
+                        msg:"err in hashing password"
+                    })
+                } 
+                else {
+                    
+                    const user = new User({
+                        email,
+                        name,
+                        password:hash
+                    })
+                    
+                    await user.save();
+                    const accessToken = accessTokenGenerator();
+                    const refreshToken = refreshTokenGenerator();
     
-                    var accessToken = jwt.sign(Apayload, process.env.JWT_ACCESS_KEY,Aoptions);
-
-                
-                
-                    const Rpayload = {}
-                    const Roptions = {
-                        expiresIn : "1y",
-                        audience: [user._id]
-                    }
-    
-                    var refreshToken = jwt.sign(Rpayload, process.env.JWT_REFRESH_KEY,Roptions);
-
-                
-
-                res.json({accessToken,refreshToken})
+                    res.json({accessToken,refreshToken})
+                }
                 
             });
         }
@@ -70,19 +82,25 @@ exports.signin = async (req,res) => {
     const validationErrors = validationResult(req);
     if(validationErrors.isEmpty()){
         const isExist = await User.findOne({email:email});
-        if (!isExist) {
-            res.json({ message: "User does not exist" 
-        })
-    }
+        console.log(isExist);
+            if (!isExist) {
+                res.json({ message: "User does not exist" 
+            })
+        }
         //if user exist than compare password
             //password comes from the user
             //user.password comes from the database
             else{
-                bcrypt.compare(password, User.password, (err, data) => {
-                    if (data) {
-                        return res.json({ msg: "Login success" })
-                    } else {
-                        return res.json({ msg: "Invalid credentials" })
+                bcrypt.compare(password, isExist.password, (err, data) => {
+                    if(err){
+                        res.json({
+                            msg:"err in hashing password"
+                        })
+                    }
+                    else{
+                        const accessToken = accessTokenGenerator(isExist);
+                        const refreshToken = refreshTokenGenerator(isExist);
+                        res.json({accessToken,refreshToken})
                     }
                   }
                 )
