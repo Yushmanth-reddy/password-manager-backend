@@ -65,6 +65,28 @@ exports.signup = async(req,res) => {
 
 }
 
-exports.signin = (req,res) => {
-    console.log("kjdhfs");
+exports.signin = async (req,res) => {
+    const {email,password} = req.body;
+    const validationErrors = validationResult(req);
+    if(validationErrors.isEmpty()){
+        const isExist = await User.findOne({email:email});
+        if (!isExist) {
+            res.json({ message: "User does not exist" 
+        })
+    }
+        //if user exist than compare password
+            //password comes from the user
+            //user.password comes from the database
+            else{
+                bcrypt.compare(password, User.password, (err, data) => {
+                    if (data) {
+                        return res.json({ msg: "Login success" })
+                    } else {
+                        return res.json({ msg: "Invalid credentials" })
+                    }
+                  }
+                )
+            }
+           
+    }
 }
