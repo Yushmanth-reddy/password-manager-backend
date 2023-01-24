@@ -3,7 +3,7 @@ const User = require("../models/user");
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcrypt");
 var jwt = require("jsonwebtoken");
-
+const redisClient = require("../init_redis");
 // function to generate an access token
 
 const accessTokenGenerator = (user) => {
@@ -108,5 +108,24 @@ exports.signin = async (req, res) => {
         }
       });
     }
+  }
+};
+
+exports.logout = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      throw createError.BadRequest();
+    }
+    const userID = await refreshToken(refreshToken);
+    redisClient.DEL(userID, (err, val) => {
+      if (err) {
+        console.log(err.message);
+        throw createError.InternalServerError();
+      }
+      console.log(val);
+    });
+  } catch (error) {
+    next(error);
   }
 };

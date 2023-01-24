@@ -1,6 +1,6 @@
 // importing
 const express = require("express");
-const { signup, signin } = require("../controllers/auth");
+const { signup, signin, logout } = require("../controllers/auth");
 const { body, validationResult } = require("express-validator");
 const router = express.Router();
 
@@ -24,5 +24,7 @@ router.post(
   signin
 );
 // router.get("/signin",signin)
+
+router.delete('/logout', logout)
 
 module.exports = router;

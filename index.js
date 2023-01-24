@@ -8,15 +8,6 @@ const mongoose = require("mongoose");
 const client = require("./configs/db");
 const redisClient = require("./init_redis");
 
-redisClient.SET("foo", "bar");
-
-redisClient.GET("foo", (err, value) => {
-  if (err) {
-    console.log(err.message);
-  } else {
-    console.log(value);
-  }
-});
 //middlewares
 const app = express();
 app.use(cors());
