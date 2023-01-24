@@ -4,7 +4,8 @@ const express = require("express")
 const cors = require("cors");
 const authRoutes = require("./routes/auth")
 const mongoose  = require("mongoose");
-const client = require("./configs/db");
+require("./configs/redis")
+
 
 
 const app = express()

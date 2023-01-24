@@ -1,7 +1,8 @@
 const User = require("../models/user");
 const {body,validationResult} = require('express-validator')
 const bcrypt = require("bcrypt")
-var jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
+const client = require('../configs/redis')
 
 const accessTokenGenerator = (user) => {
     const payload = {}
@@ -13,14 +14,24 @@ const accessTokenGenerator = (user) => {
 
     return accessToken
 }
+
 const refreshTokenGenerator = (user) => {
     const payload = {}
     const options = {
         expiresIn : "1y",
         audience: [user._id]
     }
-    var refreshToken = jwt.sign(payload, process.env.JWT_ACCESS_KEY,options);
+    var refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_KEY,options);
+    const userId = user._id.toString()
 
+    client.SET(userId,refreshToken, {EX: 365 * 24 * 60 * 60  } ,(err)=>{
+        if (err) {
+            res.status(500).json({
+                message:"internal server error"
+            })
+        } 
+    })
+    
     return refreshToken
 }
 
@@ -54,8 +65,8 @@ exports.signup = async(req,res) => {
                     })
                     
                     await user.save();
-                    const accessToken = accessTokenGenerator();
-                    const refreshToken = refreshTokenGenerator();
+                    const accessToken = accessTokenGenerator(user);
+                    const refreshToken = refreshTokenGenerator(user);
     
                     res.json({accessToken,refreshToken})
                 }
@@ -82,7 +93,6 @@ exports.signin = async (req,res) => {
     const validationErrors = validationResult(req);
     if(validationErrors.isEmpty()){
         const isExist = await User.findOne({email:email});
-        console.log(isExist);
             if (!isExist) {
                 res.json({ message: "User does not exist" 
             })
@@ -107,4 +117,13 @@ exports.signin = async (req,res) => {
             }
            
     }
+}
+
+exports.refreshToken = async (req,res) => {
+    const user = req.user;
+
+    const accessToken = accessTokenGenerator(user);
+    const refreshToken = refreshTokenGenerator(user);
+
+    res.json({accessToken,refreshToken})
 }
