@@ -1,0 +1,10 @@
+{
+  "workbench.panel.defaultLocation": "right",
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.formatOnType": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "terminal.integrated.smoothScrolling": true,
+  "terminal.integrated.tabs.defaultColor": "terminal.ansiBlack",
+  "terminal.integrated.defaultLocation": "view"
+}
