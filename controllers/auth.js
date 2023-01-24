@@ -127,3 +127,31 @@ exports.refreshToken = async (req,res) => {
 
     res.json({accessToken,refreshToken})
 }
+
+exports.logout = async (req,res) => {
+    const userId = req.user._id.toString()
+    client.DEL(userId,(err) => {
+        if(err){
+            res.status(500).json({
+                msg:"internal server error"
+            })
+        }
+        else{
+            res.json({
+                msg:"User loggedout successfully"
+            })
+        }
+    })
+    client.DEL(userId)
+    .then((data)=>{
+        res.json({
+            msg:"User loggedout successfully"
+        })
+    })
+    .catch((err)=>{
+        console.log(err);
+        res.status(500).json({
+            msg:"internal server error"
+        })
+    })
+}
