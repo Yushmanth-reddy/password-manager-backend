@@ -16,6 +16,10 @@ const userSchema = new schema({
         type:String,
         required : true,
         trim : true
+    },
+    publicKey:{
+        type:String,
+        required : true,
     }
 },{timestamps: true});
 

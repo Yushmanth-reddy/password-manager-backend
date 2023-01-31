@@ -36,3 +36,28 @@ exports.verifyRefresh = (req,res,next) => {
       });
 
     }
+
+exports.verifyAccess = (req,res,next) => {
+    const accessToken = req.headers.authorization.split(' ')[1];
+    jwt.verify(accessToken,process.env.JWT_ACCESS_KEY, async(err,decoded) => {
+        if (err) {
+            console.log(err);
+            res.status(400).json({
+                msg:"Error in jwt token"
+            })
+        } else {
+            const userId = decoded.aud
+            const user = await User.findOne({_id:userId})
+            if(user){
+                req.user = user;
+                next();
+            }
+            else{
+                res.status(400).json({
+                    msg:"Invalid token"
+                })
+            }
+        }
+    })
+
+}

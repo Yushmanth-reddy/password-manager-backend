@@ -2,7 +2,9 @@ const User = require("../models/user");
 const {body,validationResult} = require('express-validator')
 const bcrypt = require("bcrypt")
 const jwt = require('jsonwebtoken');
-const client = require('../configs/redis')
+const client = require('../configs/redis');
+const NodeRSA = require('node-rsa');
+const key = new NodeRSA({b: 1024});
 
 const accessTokenGenerator = (user) => {
     const payload = {}
@@ -57,18 +59,20 @@ exports.signup = async(req,res) => {
                     })
                 } 
                 else {
-                    
+                    const publicKey = key.exportKey('public');
+                    const privateKey = key.exportKey('private');
                     const user = new User({
                         email,
                         name,
-                        password:hash
+                        password:hash,
+                        publicKey
                     })
                     
                     await user.save();
                     const accessToken = accessTokenGenerator(user);
                     const refreshToken = refreshTokenGenerator(user);
     
-                    res.json({accessToken,refreshToken})
+                    res.json({accessToken,refreshToken,privateKey})
                 }
                 
             });
@@ -130,18 +134,6 @@ exports.refreshToken = async (req,res) => {
 
 exports.logout = async (req,res) => {
     const userId = req.user._id.toString()
-    client.DEL(userId,(err) => {
-        if(err){
-            res.status(500).json({
-                msg:"internal server error"
-            })
-        }
-        else{
-            res.json({
-                msg:"User loggedout successfully"
-            })
-        }
-    })
     client.DEL(userId)
     .then((data)=>{
         res.json({
@@ -155,3 +147,4 @@ exports.logout = async (req,res) => {
         })
     })
 }
+
