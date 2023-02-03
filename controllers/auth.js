@@ -72,7 +72,7 @@ exports.signup = async(req,res) => {
                     const accessToken = accessTokenGenerator(user);
                     const refreshToken = refreshTokenGenerator(user);
     
-                    res.json({accessToken,refreshToken,privateKey})
+                    res.status(200).json({accessToken,refreshToken,privateKey})
                 }
                 
             });

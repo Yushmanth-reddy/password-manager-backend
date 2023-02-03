@@ -1,8 +1,8 @@
 const express = require("express");
-const { addPass } = require("../controllers/password");
+const { storePrivateKey } = require("../controllers/Pkey");
 const { verifyRefresh, verifyAccess } = require("../middleware/verifyToken");
 const router = express.Router();
 
-router.post("/addPass",verifyAccess,addPass)
+router.post("/storeKey",verifyAccess,storePrivateKey)
 
-module.exports = router;
+module.exports = router

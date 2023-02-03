@@ -4,6 +4,7 @@ const express = require("express")
 const cors = require("cors");
 const authRoutes = require("./routes/auth")
 const passRoutes = require("./routes/password")
+const keyRoutes = require("./routes/Pkey")
 const mongoose  = require("mongoose");
 require("./configs/redis")
 
@@ -15,6 +16,7 @@ app.use(express.json())
 
 app.use("/auth",authRoutes);
 app.use("/pass",passRoutes);
+app.use("/key",keyRoutes);
 
 const PORT = process.env.PORT || 3300 
 
