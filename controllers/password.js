@@ -8,10 +8,7 @@ exports.addPass = async (req,res) => {
     const user = req.user;
 
     const publicKey = req.user.publicKey;
-    const privateKey = await client.GET(publicKey);
-    
     const key_public = new NodeRSA(publicKey)
-    const key_private = new NodeRSA(privateKey)
 
     const encryptedPassword = key_public.encrypt(password,'base64');
 
@@ -32,11 +29,70 @@ exports.addPass = async (req,res) => {
             msg:"internal server error"
         })
     })
-
-    const decrypt = key_private.decrypt(encryptedPassword,'utf8')
-    console.log(decrypt);
 }
 
 exports.showPass = async (req,res) =>{
+    const passId = req.params.passId;
+    const user = req.user;
+
+    const publicKey = req.user.publicKey;
+    const privateKey = await client.GET(publicKey);
     
+    // const key_public = new NodeRSA(publicKey)
+    const key_private = new NodeRSA(privateKey)
+
+    
+    await Password.findOne({_id:passId})
+    .then((pass)=>{
+        const decryptedPassword = key_private.decrypt(pass.password,'utf8')
+        res.status(200).json({
+            websiteURL : pass.websiteURL,
+            password : decryptedPassword
+        })
+    })
+    .catch((err)=>{
+        res.status(400).json({
+            msg:"Password not found",
+            mse:err.msg
+        })
+    })
+}
+
+exports.deletePass = async (req,res) => {
+    const passId = req.params.passId;
+    const user = req.user;
+    
+    await Password.deleteOne({_id:passId})
+    .then(()=>{
+        res.status(200).json({
+            msg:"Password deleted"
+        })
+    })
+    .catch((err)=>{
+        res.json({
+            msg:"password not found"
+        })
+    })
+}
+
+exports.updatePass = async (req,res) => {
+    const passId = req.params.passId;
+    const user = req.user;
+    const {websiteURL, password} = req.body;
+    
+    const publicKey = req.user.publicKey;
+    const key_public = new NodeRSA(publicKey)
+
+    const encryptedPassword = key_public.encrypt(password,'base64');
+    await Password.updateOne({_id:passId},{$set:{password:encryptedPassword,websiteURL}})
+    .then(()=>{
+        res.status(200).json({
+            msg:"Password updated"
+        })
+    })
+    .catch((err)=>{
+        res.json({
+            msg:"Error in updating password"
+        })
+    })
 }
