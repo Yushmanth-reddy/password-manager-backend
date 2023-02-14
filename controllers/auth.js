@@ -6,8 +6,6 @@ const client = require("../configs/redis");
 const NodeRSA = require("node-rsa");
 const key = new NodeRSA({ b: 1024 });
 
-
-// generating accessToken
 const accessTokenGenerator = (user) => {
   const payload = {};
   const options = {
@@ -19,7 +17,6 @@ const accessTokenGenerator = (user) => {
   return accessToken;
 };
 
-// generating refreshToken
 const refreshTokenGenerator = (user) => {
   const payload = {};
   const options = {
@@ -40,7 +37,6 @@ const refreshTokenGenerator = (user) => {
   return refreshToken;
 };
 
-// signup function
 exports.signup = async (req, res) => {
   const { email, name, password } = req.body;
 
@@ -88,8 +84,6 @@ exports.signup = async (req, res) => {
   }
 };
 
-
-// signing in the user
 exports.signin = async (req, res) => {
   const { email, password } = req.body;
   const validationErrors = validationResult(req);
@@ -123,8 +117,6 @@ exports.signin = async (req, res) => {
   }
 };
 
-
-// exporting Access Token and Refresh Token
 exports.refreshToken = async (req, res) => {
   const user = req.user;
 
@@ -134,15 +126,13 @@ exports.refreshToken = async (req, res) => {
   res.json({ accessToken, refreshToken });
 };
 
-
-// logging out the user
 exports.logout = async (req, res) => {
   const userId = req.user._id.toString();
   client
     .DEL(userId)
     .then((data) => {
       res.json({
-        msg: "User logged out successfully",
+        msg: "User loggedout successfully",
       });
     })
     .catch((err) => {

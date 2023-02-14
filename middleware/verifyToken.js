@@ -2,8 +2,6 @@ const jwt = require('jsonwebtoken');
 const client = require('../configs/redis');
 const User = require("../models/user");
 
-
-// function to verify the refresh token
 exports.verifyRefresh = (req,res,next) => {
     const refreshToken = req.headers.authorization;
     
@@ -13,7 +11,6 @@ exports.verifyRefresh = (req,res,next) => {
                 msg:"Error in jwt token"
             })
         } else {
-            // needs explanation
             const userId = decoded.aud
             await client.GET(userId[0])
             .then(async (result)=>{
@@ -40,7 +37,6 @@ exports.verifyRefresh = (req,res,next) => {
 
     }
 
-    // verifying accessTokens
 exports.verifyAccess = (req,res,next) => {
     const accessToken = req.headers.authorization.split(' ')[1];
     jwt.verify(accessToken,process.env.JWT_ACCESS_KEY, async(err,decoded) => {

@@ -3,7 +3,6 @@ const key = new NodeRSA({ b: 1024 });
 const client = require("../configs/redis");
 const Password = require("../models/passwords");
 
-// add Password Feature
 exports.addPass = async (req, res) => {
   const { websiteURL, password } = req.body;
   const user = req.user;
@@ -76,8 +75,6 @@ exports.deletePass = async (req, res) => {
     });
 };
 
-
-//update password function
 exports.updatePass = async (req, res) => {
   const passId = req.params.passId;
   const user = req.user;
@@ -87,7 +84,6 @@ exports.updatePass = async (req, res) => {
   const key_public = new NodeRSA(publicKey);
 
   const encryptedPassword = key_public.encrypt(password, "base64");
-  // updating password in db
   await Password.updateOne(
     { _id: passId },
     { $set: { password: encryptedPassword, websiteURL } }
