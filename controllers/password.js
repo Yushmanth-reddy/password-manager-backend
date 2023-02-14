@@ -4,18 +4,19 @@ const client = require("../configs/redis");
 const Password = require("../models/passwords");
 
 exports.addPass = async (req, res) => {
-  const { websiteURL, password } = req.body;
+  const { username, Title, websiteURL, password } = req.body;
   const user = req.user;
 
   const publicKey = req.user.publicKey;
   const key_public = new NodeRSA(publicKey);
 
   const encryptedPassword = key_public.encrypt(password, "base64");
-
   const passwords = new Password({
     email: user.email,
     password: encryptedPassword,
     websiteURL,
+    siteTitle: Title,
+    userName: username,
   });
 
   await passwords
@@ -29,6 +30,7 @@ exports.addPass = async (req, res) => {
       res.status(500).json({
         msg: "internal server error",
       });
+      console.log("hello");
     });
 };
 

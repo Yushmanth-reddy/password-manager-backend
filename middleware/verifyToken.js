@@ -41,7 +41,6 @@ exports.verifyRefresh = (req, res, next) => {
 };
 
 exports.verifyAccess = (req, res, next) => {
-  console.log(req.headers);
   const accessToken = req.headers.authorization.split(" ")[1];
   jwt.verify(accessToken, process.env.JWT_ACCESS_KEY, async (err, decoded) => {
     if (err) {

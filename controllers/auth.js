@@ -107,7 +107,10 @@ exports.signin = async (req, res) => {
           const accessToken = accessTokenGenerator(isExist);
           const refreshToken = refreshTokenGenerator(isExist);
 
-          res.cookie("refreshToken", refreshToken, { httpOnly: true });
+          res.cookie("refreshToken", refreshToken, {
+            expires: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
+            httpOnly: true,
+          });
           res.json({ accessToken, refreshToken });
         }
       });
