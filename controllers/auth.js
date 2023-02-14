@@ -106,6 +106,8 @@ exports.signin = async (req, res) => {
         } else {
           const accessToken = accessTokenGenerator(isExist);
           const refreshToken = refreshTokenGenerator(isExist);
+
+          res.cookie("refreshToken", refreshToken, { httpOnly: true });
           res.json({ accessToken, refreshToken });
         }
       });
