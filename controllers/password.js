@@ -105,3 +105,14 @@ exports.updatePass = async (req, res) => {
       });
     });
 };
+
+exports.getallpass = async(req, res) => {
+  const {email} = req.user
+  await Password.find({email: email})
+  .then((data) => {
+    res.status(200).json(data);
+  })
+  .catch((err) => {
+    res.status(500).json(err);
+  })
+}
