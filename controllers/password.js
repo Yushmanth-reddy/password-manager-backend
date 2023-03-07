@@ -40,9 +40,9 @@ exports.showPass = async (req, res) => {
   const user = req.user;
 
   const publicKey = req.user.publicKey;
-  const privateKey = await client.GET(publicKey);
+  let privateKey = await client.GET(publicKey);
+  privateKey = privateKey.replace(/\\n/g, "\n");
 
-  // const key_public = new NodeRSA(publicKey)
   const key_private = new NodeRSA(privateKey);
 
   await Password.findOne({ _id: passId })
@@ -78,7 +78,6 @@ exports.deletePass = async (req, res) => {
     });
 };
 
-
 //update password function
 exports.updatePass = async (req, res) => {
   const passId = req.params.passId;
@@ -106,13 +105,13 @@ exports.updatePass = async (req, res) => {
     });
 };
 
-exports.getallpass = async(req, res) => {
-  const {email} = req.user
-  await Password.find({email: email})
-  .then((data) => {
-    res.status(200).json(data);
-  })
-  .catch((err) => {
-    res.status(500).json(err);
-  })
-}
+exports.getallpass = async (req, res) => {
+  const { email } = req.user;
+  await Password.find({ email: email })
+    .then((data) => {
+      res.status(200).json(data);
+    })
+    .catch((err) => {
+      res.status(500).json(err);
+    });
+};
