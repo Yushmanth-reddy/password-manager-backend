@@ -9,9 +9,6 @@ exports.storePrivateKey = async (req, res) => {
     res.status(200).json({
       msg: "Private key stored",
     });
-    // console.log(typeof privateKey);
-    console.log(privateKey);
-    // console.log("hello\nyushman");
   } else {
     res.status(500).json({
       message: "internal server error",

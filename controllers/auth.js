@@ -6,7 +6,6 @@ const client = require("../configs/redis");
 const NodeRSA = require("node-rsa");
 const key = new NodeRSA({ b: 1024 });
 
-
 // generating accessToken
 const accessTokenGenerator = (user) => {
   const payload = {};
@@ -72,6 +71,11 @@ exports.signup = async (req, res) => {
           const accessToken = accessTokenGenerator(user);
           const refreshToken = refreshTokenGenerator(user);
 
+          res.cookie("refreshToken", refreshToken, {
+            expires: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
+            httpOnly: true,
+          });
+
           res.status(200).json({ accessToken, refreshToken, privateKey });
         }
       });
@@ -87,7 +91,6 @@ exports.signup = async (req, res) => {
     });
   }
 };
-
 
 // signing in the user
 exports.signin = async (req, res) => {
@@ -128,7 +131,6 @@ exports.signin = async (req, res) => {
   }
 };
 
-
 // exporting Access Token and Refresh Token
 exports.refreshToken = async (req, res) => {
   const user = req.user;
@@ -138,7 +140,6 @@ exports.refreshToken = async (req, res) => {
 
   res.json({ accessToken, refreshToken });
 };
-
 
 // logging out the user
 exports.logout = async (req, res) => {
