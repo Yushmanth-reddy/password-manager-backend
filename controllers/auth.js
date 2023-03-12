@@ -4,7 +4,9 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const client = require("../configs/redis");
 const NodeRSA = require("node-rsa");
+const nodemailer = require("nodemailer");
 const key = new NodeRSA({ b: 1024 });
+const URL = "http://localhost:3300";
 
 // generating accessToken
 const accessTokenGenerator = (user) => {
@@ -27,14 +29,6 @@ const refreshTokenGenerator = (user) => {
   };
   var refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_KEY, options);
   const userId = user._id.toString();
-
-  client.SET(userId, refreshToken, { EX: 365 * 24 * 60 * 60 }, (err) => {
-    if (err) {
-      res.status(500).json({
-        message: "internal server error",
-      });
-    }
-  });
 
   return refreshToken;
 };
@@ -138,23 +132,81 @@ exports.refreshToken = async (req, res) => {
   const accessToken = accessTokenGenerator(user);
   const refreshToken = refreshTokenGenerator(user);
 
-  res.json({ accessToken, refreshToken });
+  res.cookie("refreshToken", refreshToken, {
+    expires: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
+    httpOnly: true,
+  });
+  res.status(200).json({ accessToken, refreshToken });
 };
 
-// logging out the user
-exports.logout = async (req, res) => {
-  const userId = req.user._id.toString();
-  client
-    .DEL(userId)
-    .then((data) => {
-      res.json({
-        msg: "User logged out successfully",
-      });
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({
-        msg: "internal server error",
-      });
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const isExist = await User.findOne({ email: email });
+    if (!isExist) {
+      res.json({ message: "User does not exist" });
+      return;
+    }
+    const secret = process.env.JWT_ACCESS_KEY + isExist.password;
+
+    const token = jwt.sign({ email: isExist.email, id: isExist._id }, secret, {
+      expiresIn: "5m",
     });
+    const link = `${URL}/auth/reset-password/${isExist._id}/${token}`;
+    var nodemailer = require("nodemailer");
+
+    var transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "yushmurdy29@gmail.com",
+        pass: "xlsadgjvmsuujmwb",
+      },
+    });
+
+    var mailOptions = {
+      from: "yushmurdy29@gmail.com",
+      to: "yushmanthponnolu@gmail.com",
+      subject: "Sending Email using Node.js",
+      text: link,
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Email sent: " + info.response);
+      }
+    });
+    console.log(link);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const { id, token } = req.params;
+  const { password } = req.body;
+  const isExist = await User.findOne({ _id: id });
+  if (!isExist) {
+    res.json({ message: "User does not exist" });
+    return;
+  }
+  const secret = process.env.JWT_ACCESS_KEY + isExist.password;
+  try {
+    const verify = jwt.verify(token, secret);
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await User.updateOne(
+      {
+        _id: id,
+      },
+      {
+        $set: {
+          password: hashedPassword,
+        },
+      }
+    );
+    res.status(200).json({ message: "password updated" });
+  } catch (err) {
+    res.send("not verified");
+  }
 };

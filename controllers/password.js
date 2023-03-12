@@ -31,16 +31,13 @@ exports.addPass = async (req, res) => {
       res.status(500).json({
         msg: "internal server error",
       });
-      console.log("hello");
     });
 };
 
 exports.showPass = async (req, res) => {
   const passId = req.params.passId;
   const user = req.user;
-
-  const publicKey = req.user.publicKey;
-  let privateKey = await client.GET(publicKey);
+  let privateKey = req.body.privateKey;
   privateKey = privateKey.replace(/\\n/g, "\n");
 
   const key_private = new NodeRSA(privateKey);
@@ -82,16 +79,22 @@ exports.deletePass = async (req, res) => {
 exports.updatePass = async (req, res) => {
   const passId = req.params.passId;
   const user = req.user;
-  const { websiteURL, password } = req.body;
+  const { websiteURL, password, Title, username } = req.body;
 
   const publicKey = req.user.publicKey;
   const key_public = new NodeRSA(publicKey);
-
   const encryptedPassword = key_public.encrypt(password, "base64");
   // updating password in db
   await Password.updateOne(
     { _id: passId },
-    { $set: { password: encryptedPassword, websiteURL } }
+    {
+      $set: {
+        password: encryptedPassword,
+        websiteURL,
+        siteTitle: Title,
+        userName: username,
+      },
+    }
   )
     .then(() => {
       res.status(200).json({
@@ -101,6 +104,32 @@ exports.updatePass = async (req, res) => {
     .catch((err) => {
       res.json({
         msg: "Error in updating password",
+      });
+    });
+};
+
+exports.getPass = async (req, res) => {
+  const passId = req.params.passId;
+  // console.log(req.body);
+  let privateKey = req.body.privateKey;
+
+  const key_private = new NodeRSA(privateKey);
+
+  await Password.findById({ _id: passId })
+    .then((pass) => {
+      // console.log(pass);
+      const decryptedPassword = key_private.decrypt(pass.password, "utf8");
+      res.status(200).json({
+        websiteURL: pass.websiteURL,
+        password: decryptedPassword,
+        userName: pass.userName,
+        siteTitle: pass.siteTitle,
+      });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(400).json({
+        msg: "password not found",
       });
     });
 };
