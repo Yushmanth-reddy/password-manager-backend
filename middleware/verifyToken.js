@@ -16,28 +16,6 @@ exports.verifyRefresh = async (req, res, next) => {
   } catch (err) {
     return next(createError(400, "User not authenticated"));
   }
-  // jwt.verify(
-  //   refreshToken,
-  //   process.env.JWT_REFRESH_KEY,
-  //   async (err, decoded) => {
-  //     if (err) {
-  //       res.status(400).json({
-  //         msg: "jwt expired",
-  //       });
-  //     } else {
-  //       const userId = decoded.aud;
-  //       const user = await User.findOne({ _id: userId });
-  //       if (!user) {
-  //         res.status(400).json({
-  //           msg: "Unauthorized",
-  //         });
-  //       } else {
-  //         req.user = user;
-  //         next();
-  //       }
-  //     }
-  //   }
-  // );
 };
 
 exports.verifyAccess = async (req, res, next) => {
@@ -53,23 +31,4 @@ exports.verifyAccess = async (req, res, next) => {
   } catch (err) {
     return next(createError(400, "User not authenticated"));
   }
-  // jwt.verify(accessToken, process.env.JWT_ACCESS_KEY, async (err, decoded) => {
-  //   if (err) {
-  //     console.log(err);
-  //     res.status(400).json({
-  //       msg: "jwt expired",
-  //     });
-  //   } else {
-  //     const userId = decoded.aud;
-  //     const user = await User.findOne({ _id: userId });
-  //     if (user) {
-  //       req.user = user;
-  //       next();
-  //     } else {
-  //       res.status(400).json({
-  //         msg: "Invalid token",
-  //       });
-  //     }
-  //   }
-  // });
 };

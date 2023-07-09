@@ -2,145 +2,167 @@ const NodeRSA = require("node-rsa");
 const key = new NodeRSA({ b: 1024 });
 const client = require("../configs/redis");
 const Password = require("../models/passwords");
+const { createError } = require("../utils/error");
 
 // add Password Feature
-exports.addPass = async (req, res) => {
-  const { username, Title, websiteURL, password } = req.body;
-  const user = req.user;
+exports.addPass = async (req, res, next) => {
+  try {
+    const { username, Title, websiteURL, password } = req.body;
+    const user = req.user;
 
-  const publicKey = req.user.publicKey;
-  const key_public = new NodeRSA(publicKey);
+    const publicKey = req.user.publicKey;
+    const key_public = new NodeRSA(publicKey);
 
-  const encryptedPassword = key_public.encrypt(password, "base64");
-  const passwords = new Password({
-    email: user.email,
-    password: encryptedPassword,
-    websiteURL,
-    siteTitle: Title,
-    userName: username,
-  });
-
-  await passwords
-    .save()
-    .then(() => {
-      res.status(200).json({
-        msg: "password stored",
-      });
-    })
-    .catch((err) => {
-      res.status(500).json({
-        msg: "internal server error",
-      });
+    const encryptedPassword = key_public.encrypt(password, "base64");
+    const passwords = new Password({
+      email: user.email,
+      password: encryptedPassword,
+      websiteURL,
+      siteTitle: Title,
+      userName: username,
     });
+
+    await passwords.save();
+    res.status(200).json({
+      msg: "password stored",
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.showPass = async (req, res) => {
-  const passId = req.params.passId;
-  const user = req.user;
-  let privateKey = req.body.privateKey;
-  privateKey = privateKey.replace(/\\n/g, "\n");
+exports.showPass = async (req, res, next) => {
+  try {
+    const passId = req.params.passId;
+    const user = req.user;
+    let privateKey = req.body.privateKey;
+    if (privateKey) {
+      privateKey = privateKey.replace(/\\n/g, "\n");
+    }
+    const key_private = new NodeRSA(privateKey);
 
-  const key_private = new NodeRSA(privateKey);
-
-  await Password.findOne({ _id: passId })
-    .then((pass) => {
-      const decryptedPassword = key_private.decrypt(pass.password, "utf8");
+    const passwordDetailes = await Password.findOne({
+      _id: passId,
+      email: user.email,
+    });
+    if (passwordDetailes) {
+      const decryptedPassword = key_private.decrypt(
+        passwordDetailes.password,
+        "utf8"
+      );
       res.status(200).json({
-        websiteURL: pass.websiteURL,
+        websiteURL: passwordDetailes.websiteURL,
         password: decryptedPassword,
       });
-    })
-    .catch((err) => {
-      res.status(400).json({
-        msg: "Password not found",
-        mse: err.msg,
-      });
-    });
+    } else {
+      return next(createError(400, "Password not found"));
+    }
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.deletePass = async (req, res) => {
-  const passId = req.params.passId;
-  const user = req.user;
+exports.deletePass = async (req, res, next) => {
+  try {
+    const passId = req.params.passId;
+    const user = req.user;
 
-  await Password.deleteOne({ _id: passId })
-    .then(() => {
-      res.status(200).json({
-        msg: "Password deleted",
-      });
-    })
-    .catch((err) => {
-      res.json({
-        msg: "password not found",
-      });
+    const { deletedCount } = await Password.deleteOne({
+      _id: passId,
+      email: user.email,
     });
+
+    if (deletedCount === 0)
+      return next(
+        createError(400, "Error in deleting the password(password not found)")
+      );
+
+    res.status(200).json({
+      msg: "Password deleted",
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 //update password function
-exports.updatePass = async (req, res) => {
-  const passId = req.params.passId;
-  const user = req.user;
-  const { websiteURL, password, Title, username } = req.body;
+exports.updatePass = async (req, res, next) => {
+  try {
+    const passId = req.params.passId;
+    const user = req.user;
+    const { websiteURL, password, Title, username } = req.body;
 
-  const publicKey = req.user.publicKey;
-  const key_public = new NodeRSA(publicKey);
-  const encryptedPassword = key_public.encrypt(password, "base64");
-  // updating password in db
-  await Password.updateOne(
-    { _id: passId },
-    {
-      $set: {
-        password: encryptedPassword,
-        websiteURL,
-        siteTitle: Title,
-        userName: username,
-      },
+    const publicKey = req.user.publicKey;
+    const key_public = new NodeRSA(publicKey);
+    const encryptedPassword = key_public.encrypt(password, "base64");
+
+    const { modifiedCount } = await Password.updateOne(
+      { _id: passId, email: user.email },
+      {
+        $set: {
+          password: encryptedPassword,
+          websiteURL,
+          siteTitle: Title,
+          userName: username,
+        },
+      }
+    );
+    if (modifiedCount === 0) {
+      return next(
+        createError(400, "Error in updating the password (password not found)")
+      );
     }
-  )
-    .then(() => {
-      res.status(200).json({
-        msg: "Password updated",
-      });
-    })
-    .catch((err) => {
-      res.json({
-        msg: "Error in updating password",
-      });
+    res.status(200).json({
+      msg: "Password updated",
     });
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.getPass = async (req, res) => {
-  const passId = req.params.passId;
-  // console.log(req.body);
-  let privateKey = req.body.privateKey;
+exports.getPass = async (req, res, next) => {
+  try {
+    const passId = req.params.passId;
+    const user = req.user;
+    let privateKey = req.body.privateKey;
+    if (privateKey) {
+      privateKey = privateKey.replace(/\\n/g, "\n");
+    }
+    const key_private = new NodeRSA(privateKey);
 
-  const key_private = new NodeRSA(privateKey);
-
-  await Password.findById({ _id: passId })
-    .then((pass) => {
-      // console.log(pass);
-      const decryptedPassword = key_private.decrypt(pass.password, "utf8");
+    const passwordDetailes = await Password.findOne({
+      _id: passId,
+      email: user.email,
+    });
+    if (passwordDetailes) {
+      const decryptedPassword = key_private.decrypt(
+        passwordDetailes.password,
+        "utf8"
+      );
       res.status(200).json({
-        websiteURL: pass.websiteURL,
+        websiteURL: passwordDetailes.websiteURL,
         password: decryptedPassword,
-        userName: pass.userName,
-        siteTitle: pass.siteTitle,
+        userName: passwordDetailes.userName,
+        siteTitle: passwordDetailes.siteTitle,
       });
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(400).json({
-        msg: "password not found",
-      });
-    });
+    } else {
+      return next(createError(400, "Password not found"));
+    }
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.getallpass = async (req, res) => {
-  const { email } = req.user;
-  await Password.find({ email: email })
-    .then((data) => {
-      res.status(200).json(data);
-    })
-    .catch((err) => {
-      res.status(500).json(err);
-    });
+exports.getallpass = async (req, res, next) => {
+  try {
+    const { email } = req.user;
+    const allPasswords = await Password.find({ email: email });
+    if (allPasswords) {
+      res.status(200).json(allPasswords);
+    } else {
+      return next(createError(400, "Passwords not found"));
+    }
+  } catch (err) {
+    next(err);
+  }
 };
